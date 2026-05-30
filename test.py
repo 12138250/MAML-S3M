@@ -63,22 +63,20 @@ class Meta(nn.Module):
             with torch.no_grad():
                 logits_q = self.net(x_qry[i], self.net.parameters(), bn_training=True)
                 loss_q = F.cross_entropy(logits_q, y_qry[i])
-                losses_q[0] += loss_q
+
                 pred_q = F.softmax(logits_q, dim=1).argmax(dim=1)
                 correct = torch.eq(pred_q, y_qry[i]).sum().item()
-                corrects[0] = corrects[0] + correct
+     
 
             with torch.no_grad():
                 logits_q = self.net(x_qry[i], fast_weights, bn_training=True)
                 loss_q = F.cross_entropy(logits_q, y_qry[i])
-                losses_q[1] += loss_q
                 pred_q = F.softmax(logits_q, dim=1).argmax(dim=1)
                 correct = torch.eq(pred_q, y_qry[i]).sum().item()
-                corrects[1] = corrects[1] + correct
+
 
             for k in range(1, self.update_step):
-                logits = self.net(x_spt[i], fast_weights, bn_training=True)
-                loss = F.cross_entropy(logits, y_spt[i])
+      
 
                 grad = torch.autograd.grad(loss, fast_weights, allow_unused=True)
                 grad = [g if g is not None else torch.zeros_like(p)
@@ -91,7 +89,6 @@ class Meta(nn.Module):
 
                 logits_q = self.net(x_qry[i], fast_weights, bn_training=True)
                 loss_q = F.cross_entropy(logits_q, y_qry[i])
-                losses_q[k + 1] += loss_q
 
                 with torch.no_grad():
                     pred_q = F.softmax(logits_q, dim=1).argmax(dim=1)
@@ -101,7 +98,7 @@ class Meta(nn.Module):
         loss_q = losses_q[-1] / task_num
         self.meta_optim_base.zero_grad()
         loss_q.backward()
-        self.meta_optim_base.step()
+
 
         accs = np.array(corrects) / (querysz * task_num)
         return accs
@@ -276,10 +273,6 @@ def main():
     best_epoch = 0
     acc_history = []
 
-    best_preds = None
-    best_trues = None
-    best_features = None
-    best_softmax_features = None
 
     print("\nStarting training...")
     print("=" * 70)
@@ -339,10 +332,7 @@ def main():
                     best_acc = accs[-1]
                     best_epoch = epoch
 
-                    best_preds = torch.cat(pred_labels, dim=0)
-                    best_trues = torch.cat(true_labels, dim=0)
-                    best_features = torch.cat(logits_list, dim=0)
-                    best_softmax_features = torch.cat(softmax_features, dim=0)
+
 
                     os.makedirs('./results', exist_ok=True)
                     torch.save(model.state_dict(),
