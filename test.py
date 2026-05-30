@@ -66,7 +66,7 @@ class Meta(nn.Module):
 
                 pred_q = F.softmax(logits_q, dim=1).argmax(dim=1)
                 correct = torch.eq(pred_q, y_qry[i]).sum().item()
-     
+
 
             with torch.no_grad():
                 logits_q = self.net(x_qry[i], fast_weights, bn_training=True)
@@ -76,7 +76,7 @@ class Meta(nn.Module):
 
 
             for k in range(1, self.update_step):
-      
+
 
                 grad = torch.autograd.grad(loss, fast_weights, allow_unused=True)
                 grad = [g if g is not None else torch.zeros_like(p)
